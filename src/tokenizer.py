@@ -1,4 +1,7 @@
 import re
+
+import tiktoken
+
 from config import DATA_DIR
 
 UNK = "<|unk|>"
@@ -44,7 +47,7 @@ if __name__ == "__main__":
         print("ids:", ids[:10])
         print("words:", tokenizer.decode(ids[:10]))
 
-        print("=" * 50)
+        print("测试未登录词", "=" * 50)
 
         # 处理 未登录词（OOV，Out-of-Vocabulary）
         text1 = "Hello, do you like tea?"
@@ -55,3 +58,10 @@ if __name__ == "__main__":
         ids = tokenizer.encode(text)
         print("ids:", ids)
         print("words:", tokenizer.decode(ids))
+
+        print("测试BPE", "=" * 50)
+        tokenizer = tiktoken.get_encoding("gpt2")
+        ids = tokenizer.encode("Akwirw ier")
+        words = [tokenizer.decode([id]) for id in ids]
+        print("bpe 分词结果:", words)  # ['Ak', 'w', 'ir', 'w', ' ', 'ier']
+        print("bpe ids:", ids)  # [33901, 86, 343, 86, 220, 959]
