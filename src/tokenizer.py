@@ -1,15 +1,19 @@
 import re
 from config import DATA_DIR
 
+UNK = "<|unk|>"
+END_OF_TEXT = "<|endoftext|>"
 
-class SimpleTokenizerV1:
+
+class SimpleTokenizer:
     def __init__(self, vocab: dict[str, int]) -> None:
         self.word2id = vocab
         self.id2word = {v: k for k, v in vocab.items()}
+        self.UNK_ID = vocab[UNK]
 
     def encode(self, text: str) -> list[int]:
         words = re.split(r'([,.:;?_!"()\']|--|\s)', text)
-        return [self.word2id[word.strip()] for word in words if word.strip()]
+        return [self.word2id.get(word.strip(), 0) for word in words if word.strip()]
 
     def decode(self, ids: list[int]) -> str:
         return " ".join([self.id2word[id] for id in ids])
@@ -20,6 +24,7 @@ if __name__ == "__main__":
         raw_text = f.read()
         print("Total number of character:", len(raw_text))
         print("raw_text:", raw_text[:99])
+
         print("=" * 50)
 
         preprocessed = re.split(r'([,.:;?_!"()\']|--|\s)', raw_text)
@@ -28,12 +33,25 @@ if __name__ == "__main__":
         ]
         print("preprocessed length", len(preprocessed))
         print("preprocessed:", preprocessed[:30])
+
         print("=" * 50)
 
-        all_words = sorted(set(preprocessed))
+        all_words = [UNK, END_OF_TEXT] + sorted(set(preprocessed))
         vocab = {word: i for i, word in enumerate(all_words)}
 
-        tokenizer = SimpleTokenizerV1(vocab)
+        tokenizer = SimpleTokenizer(vocab)
         ids = tokenizer.encode(raw_text)
         print("ids:", ids[:10])
         print("words:", tokenizer.decode(ids[:10]))
+
+        print("=" * 50)
+
+        # 处理 未登录词（OOV，Out-of-Vocabulary）
+        text1 = "Hello, do you like tea?"
+        text2 = "In the sunlit terraces of the palace."
+        text = END_OF_TEXT.join((text1, text2))
+        print(text)
+
+        ids = tokenizer.encode(text)
+        print("ids:", ids)
+        print("words:", tokenizer.decode(ids))
