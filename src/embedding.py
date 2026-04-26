@@ -8,10 +8,16 @@ tokenizer = tiktoken.get_encoding("gpt2")
 
 VOCAB_SIZE = tokenizer.n_vocab
 EMBEDDING_DIM = 256
+MAX_CONTENT = 4
 
 
-embedding_layer = torch.nn.Embedding(
+token_embedding_layer = torch.nn.Embedding(
     num_embeddings=VOCAB_SIZE,
+    embedding_dim=EMBEDDING_DIM,
+)
+
+pos_embedding_layer = torch.nn.Embedding(
+    num_embeddings=MAX_CONTENT,
     embedding_dim=EMBEDDING_DIM,
 )
 
@@ -25,7 +31,7 @@ if __name__ == "__main__":
         dataloader = create_dataloader(
             raw_text,
             batch_size=2,
-            max_content=4,
+            max_content=MAX_CONTENT,
             stride=1,
             shuffle=False,
         )
@@ -36,8 +42,16 @@ if __name__ == "__main__":
             # tensor([[  40,  367, 2885, 1464], [ 367, 2885, 1464, 1807]]),
             # tensor([[ 367, 2885, 1464, 1807], [2885, 1464, 1807, 3619]])
 
-            embeddings = embedding_layer(inputs)
-            print(embeddings.shape, embeddings)
-            # embeddings.shape: torch.Size([2, 4, 256])
+            token_embeddings = token_embedding_layer(inputs)
+            print(token_embeddings.shape, token_embeddings)
+            # token_embeddings.shape: torch.Size([2, 4, 256])
+
+            pos_embeddings = pos_embedding_layer(torch.arange(MAX_CONTENT))
+            print(pos_embeddings.shape, pos_embeddings)
+            # pos_embeddings.shape: torch.Size([4, 256])
+
+            input_embeddings = token_embeddings + pos_embeddings
+            print(input_embeddings.shape, input_embeddings)
+            # input_embeddings.shape: torch.Size([2, 4, 256])
 
             break
