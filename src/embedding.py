@@ -3,6 +3,9 @@ import torch
 
 from config import DATA_DIR
 from dataloader import create_dataloader
+from utils import set_seed
+
+set_seed()
 
 tokenizer = tiktoken.get_encoding("gpt2")
 
