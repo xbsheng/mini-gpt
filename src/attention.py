@@ -1,5 +1,6 @@
 import tiktoken
 import torch
+from numpy import arange
 from torch import nn
 
 from config import DATA_DIR
@@ -10,7 +11,7 @@ from embedding import EMBEDDING_DIM, token_embedding_layer
 torch.set_printoptions(sci_mode=False)
 
 
-class SelfAttention(nn.Module):
+class CausalAttention(nn.Module):
     def __init__(self, d_in: int, d_out: int, qkv_bias=False, dropout=0.2):
         super().__init__()
         self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias)
@@ -60,6 +61,32 @@ class SelfAttention(nn.Module):
         return context_vec
 
 
+class MultiHeadAttentionWrapper(nn.Module):
+    def __init__(
+        self,
+        num_heads: int,
+        d_in: int,
+        d_out: int,
+        qkv_bias=False,
+        dropout=0.2,
+    ):
+        super().__init__()
+        self.heads = nn.ModuleList(
+            [
+                CausalAttention(
+                    d_in=d_in,
+                    d_out=d_out,
+                    qkv_bias=qkv_bias,
+                    dropout=dropout,
+                )
+                for _ in range(num_heads)
+            ]
+        )
+
+    def forward(self, x: torch.Tensor):
+        return torch.cat([head(x) for head in self.heads], dim=-1)
+
+
 def handle_single_text():
     tokenizer = tiktoken.get_encoding("gpt2")
 
@@ -67,7 +94,7 @@ def handle_single_text():
     token_embeddings = token_embedding_layer(torch.tensor(inputs))
     print(token_embeddings.shape)  # torch.Size([3, 256])
 
-    attention = SelfAttention(EMBEDDING_DIM, EMBEDDING_DIM)
+    attention = CausalAttention(EMBEDDING_DIM, EMBEDDING_DIM)
     context_vec = attention(token_embeddings)  # torch.Size([3, 256])
     print(context_vec.shape)
 
@@ -103,9 +130,16 @@ def handle_batch():
             embeddings = token_embeddings + pos_embeddings
             print(embeddings.shape)
 
-            attention = SelfAttention(EMBEDDING_DIM, EMBEDDING_DIM)
+            attention = CausalAttention(EMBEDDING_DIM, EMBEDDING_DIM)
             context_vec = attention(embeddings)
-            print(context_vec.shape)  # torch.Size([2, 4, 256])
+            print("single head:", context_vec.shape)  # torch.Size([2, 4, 256])
+
+            multi_head_attention = MultiHeadAttentionWrapper(
+                3, EMBEDDING_DIM, EMBEDDING_DIM
+            )
+            multi_head_context_vec = multi_head_attention(embeddings)
+            print("multi_head_context_vec:", multi_head_context_vec.shape)
+            # torch.Size([2, 4, 768])
 
 
 if __name__ == "__main__":
