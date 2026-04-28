@@ -21,9 +21,28 @@ class SelfAttention(nn.Module):
         values = self.W_value(x)
 
         attn_scores = queries @ keys.T
+
+        # 因果掩码
+        mask = torch.triu(torch.ones(attn_scores.shape), diagonal=1)
+        print(mask)
+        # tensor([[0., 1., 1.],
+        #         [0., 0., 1.],
+        #         [0., 0., 0.]])
+
+        masked_attn_scores = attn_scores.masked_fill(mask == 1, -torch.inf)
+        print(masked_attn_scores)
+        # tensor([[ -0.2558,     -inf,     -inf],
+        #         [  3.2698, -10.0323,     -inf],
+        #         [  2.9594,  -4.3804,  -8.4760]], grad_fn=<MaskedFillBackward0>)
+
         d_k = keys.shape[-1]
         # 缩放点积注意力(scaled dot-product attention)
-        attn_weights = torch.softmax(attn_scores / (d_k**0.5), dim=-1)
+        attn_weights = torch.softmax(masked_attn_scores / (d_k**0.5), dim=-1)
+        print(attn_weights)
+        # tensor([[1.0000, 0.0000, 0.0000],
+        #         [0.6966, 0.3034, 0.0000],
+        #         [0.4714, 0.2980, 0.2307]], grad_fn=<SoftmaxBackward0>)
+
         context_vec = attn_weights @ values
 
         return context_vec
