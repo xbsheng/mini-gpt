@@ -35,14 +35,14 @@ def handle_context_vec(embeddings: torch.Tensor):
     #         [-12.9429, 238.1973,  19.6215],
     #         [ 20.7460,  19.6215, 246.4796]], grad_fn=<MmBackward0>)
 
-    # 归一化
+    # 归一化 / 缩放点积注意力(scaled dot-product attention)
     attn_weights = torch.softmax(attn_scores / EMBEDDING_DIM, dim=-1)
     print(attn_weights)
     # tensor([[0.5956, 0.1889, 0.2155],
     #         [0.2082, 0.5553, 0.2365],
     #         [0.2267, 0.2257, 0.5476]], grad_fn=<SoftmaxBackward0>)
 
-    context_vec = torch.matmul(attn_weights, token_embeddings)
+    context_vec = torch.matmul(attn_weights, query)
     print(context_vec.shape)  # torch.Size([3, 256])
 
 
