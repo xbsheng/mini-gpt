@@ -9,11 +9,12 @@ torch.set_printoptions(sci_mode=False)
 
 
 class SelfAttention(nn.Module):
-    def __init__(self, d_in: int, d_out: int, qkv_bias=False):
+    def __init__(self, d_in: int, d_out: int, qkv_bias=False, dropout=0.2):
         super().__init__()
         self.W_query = nn.Linear(d_in, d_out, bias=qkv_bias)
         self.W_key = nn.Linear(d_in, d_out, bias=qkv_bias)
         self.W_value = nn.Linear(d_in, d_out, bias=qkv_bias)
+        self.dropout = dropout
 
     def forward(self, x: torch.Tensor):
         queries = self.W_query(x)
@@ -42,6 +43,13 @@ class SelfAttention(nn.Module):
         # tensor([[1.0000, 0.0000, 0.0000],
         #         [0.6966, 0.3034, 0.0000],
         #         [0.4714, 0.2980, 0.2307]], grad_fn=<SoftmaxBackward0>)
+
+        dropout = nn.Dropout(self.dropout)
+        attn_weights = dropout(attn_weights)
+        print("dropout attn_weights:", attn_weights)
+        # tensor([[1.2500, 0.0000, 0.0000],
+        #         [0.8708, 0.0000, 0.0000],
+        #         [0.0000, 0.3724, 0.2883]], grad_fn=<MulBackward0>)
 
         context_vec = attn_weights @ values
 
