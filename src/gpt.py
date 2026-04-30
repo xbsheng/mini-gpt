@@ -5,6 +5,7 @@ from torch import nn
 
 from config import DATA_DIR
 from dataloader import create_dataloader
+from gelu import GELU
 from normal import LayerNorm
 from utils import set_seed
 
@@ -61,6 +62,22 @@ class DummyTransformerBlock(nn.Module):
 
     def forward(self, x: torch.Tensor):
         return x
+
+
+class FeedForward(nn.Module):
+    def __init__(self, emb_dim: int):
+        super().__init__()
+
+        hidden_dim = 4 * emb_dim
+
+        self.layers = nn.Sequential(
+            nn.Linear(emb_dim, hidden_dim),
+            GELU(),
+            nn.Linear(hidden_dim, emb_dim),
+        )
+
+    def forward(self, x: torch.Tensor):
+        return self.layers(x)
 
 
 if __name__ == "__main__":
