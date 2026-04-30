@@ -3,6 +3,7 @@ from dataclasses import dataclass
 import torch
 from torch import nn
 
+from attention import MultiHeadAttention
 from config import DATA_DIR
 from dataloader import create_dataloader
 from gelu import GELU
@@ -33,7 +34,7 @@ class DummyGPTModel(nn.Module):
         self.dropout = nn.Dropout(config.drop_rate)
 
         self.transformer_blocks = nn.Sequential(
-            *[DummyTransformerBlock() for _ in range(config.n_layers)]
+            *[TransformerBlock(config, i) for i in range(config.n_layers)]
         )
 
         self.final_norm = LayerNorm(config.emb_dim)
@@ -56,11 +57,45 @@ class DummyGPTModel(nn.Module):
         return self.out_head(x)
 
 
-class DummyTransformerBlock(nn.Module):
-    def __init__(self):
+class TransformerBlock(nn.Module):
+    def __init__(self, config: GPT_CONFIG_124M, idx: int):
         super().__init__()
+        self.idx = idx
+        emb_dim = config.emb_dim
+
+        self.norm_1 = LayerNorm(emb_dim)
+        self.norm_2 = LayerNorm(emb_dim)
+
+        self.attn = MultiHeadAttention(
+            num_heads=config.n_heads,
+            d_in=emb_dim,
+            d_out=emb_dim,
+            qkv_bias=config.qkv_bias,
+            dropout=config.drop_rate,
+        )
+
+        self.dropout = nn.Dropout(config.drop_rate)
+
+        self.ff = FeedForward(emb_dim)
 
     def forward(self, x: torch.Tensor):
+        print(f"forward: TransformerBlock - {self.idx}")
+        shortcut = x
+
+        # 前层归一化(Pre-LayerNorm) ✅
+        # 较早的架构（如最初的Transformer模型）在自注意力和前馈神经网络之后才应用层归一化，
+        # 这种方法被称为后层归一化(Post-LayerNorm)，这通常会导致较差的训练效果。
+        x = self.norm_1(x)
+        x = self.attn(x)
+        x = self.dropout(x)
+        x += shortcut
+
+        shortcut = x
+        x = self.norm_2(x)
+        x = self.ff(x)
+        x = self.dropout(x)
+        x += shortcut
+
         return x
 
 

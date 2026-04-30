@@ -45,10 +45,10 @@ class MultiHeadAttention(nn.Module):
         keys = self.W_key(x).reshape(reshape_shape).transpose(1, 2)
         values = self.W_value(x).reshape(reshape_shape).transpose(1, 2)
 
-        print("queries.shape:", queries.shape)  # torch.Size([2, 8, 4, 32])
+        # print("queries.shape:", queries.shape)  # torch.Size([2, 8, 4, 32])
 
         attn_scores = queries @ keys.mT
-        print("attn_scores", attn_scores.shape)
+        # print("attn_scores", attn_scores.shape)
         # [batch_size, num_heads, seq_len, seq_len]: torch.Size([2, 8, 4, 4])
 
         # 因果掩码
@@ -70,11 +70,11 @@ class MultiHeadAttention(nn.Module):
         # [batch_size, num_heads, seq_len, seq_len] @ [batch_size, num_heads, seq_len, d_head]
         #                 -> [batch_size, num_heads, seq_len, d_head]: [2, 8, 4, 32]
         # transpose(1, 2) -> [batch_size, seq_len, num_heads, d_head]: [2, 4, 8, 32]
-        print("context_vec.shape", context_vec.shape)
+        # print("context_vec.shape", context_vec.shape)
         # torch.Size([2, 4, 8, 32])
 
         context_vec = context_vec.flatten(start_dim=-2)
-        print("context_vec.shape2", context_vec.shape)
+        # print("context_vec.shape2", context_vec.shape)
         # torch.Size([2, 4, 256])
 
         context_vec = self.out_proj(context_vec)
