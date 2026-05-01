@@ -25,7 +25,7 @@ class GPT_CONFIG_124M:
     qkv_bias = False  # 查询-键-值偏置
 
 
-class DummyGPTModel(nn.Module):
+class GPTModel(nn.Module):
     def __init__(self, config: GPT_CONFIG_124M):
         super().__init__()
         self.token_embedding = nn.Embedding(config.vocab_size, config.emb_dim)
@@ -117,7 +117,7 @@ class FeedForward(nn.Module):
 
 if __name__ == "__main__":
     config = GPT_CONFIG_124M()
-    model = DummyGPTModel(config)
+    model = GPTModel(config)
 
     with open(DATA_DIR / "the-verdict.txt", "r", encoding="utf-8") as f:
         raw_text = f.read()
@@ -139,4 +139,7 @@ if __name__ == "__main__":
             outputs = model(inputs)
             print("outputs.shape", outputs.shape)  # (batch_size, seq_len, vocab_size)
             # torch.Size([4, 1024, 50257])
-            # torch.Size([4, 1024, 50257])
+
+            prob = torch.argmax(outputs, -1)
+            print("prob.shape", prob.shape)
+            # prob.shape torch.Size([4, 1024])
