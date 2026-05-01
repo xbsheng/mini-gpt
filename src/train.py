@@ -92,9 +92,13 @@ def pred():
         for i in range(100):
             ids_tensor = torch.tensor(ids).unsqueeze(0)
             outputs = model(ids_tensor)
-            output_ids = torch.argmax(outputs, -1).squeeze().tolist()
-            ids.append(output_ids[-1])
-            text = tokenizer.decode([output_ids[-1]])
+
+            # output_ids = torch.argmax(outputs, -1).squeeze().tolist() # 贪婪采样
+
+            prob = torch.softmax(outputs, dim=-1)
+            output_id = int(torch.multinomial(prob[:, -1, :], 1).item())  # 概率采样
+            ids.append(output_id)
+            text = tokenizer.decode([output_id])
             if i == 0:
                 text = start_text + text
             print(text, end="", flush=True)
