@@ -7,10 +7,10 @@ from config import DATA_DIR
 
 
 class GPTDataset(Dataset):
-    input_ids: list[list[int]] = []
-    target_ids: list[list[int]] = []
-
     def __init__(self, tokenizer: Encoding, text: str, max_context: int, stride=1):
+        self.input_ids: list[list[int]] = []
+        self.target_ids: list[list[int]] = []
+
         ids = tokenizer.encode(text)
         for i in range(0, len(ids) - max_context, stride):
             self.input_ids.append(ids[i : i + max_context])
