@@ -91,12 +91,15 @@ def pred():
     with torch.no_grad():
         for i in range(100):
             ids_tensor = torch.tensor(ids).unsqueeze(0)
-            outputs = model(ids_tensor)
+            logits = model(ids_tensor)
 
-            # output_ids = torch.argmax(outputs, -1).squeeze().tolist() # 贪婪采样
+            # output_ids = torch.argmax(logits, -1).squeeze().tolist() # 贪婪采样
 
-            prob = torch.softmax(outputs, dim=-1)
-            output_id = int(torch.multinomial(prob[:, -1, :], 1).item())  # 概率采样
+            temperature = 0.8
+            logits = logits / temperature  # 温度缩放
+
+            probs = torch.softmax(logits, dim=-1)
+            output_id = int(torch.multinomial(probs[:, -1, :], 1).item())  # 概率采样
             ids.append(output_id)
             text = tokenizer.decode([output_id])
             if i == 0:
