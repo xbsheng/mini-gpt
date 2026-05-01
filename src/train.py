@@ -3,7 +3,7 @@ from dataclasses import dataclass
 import tiktoken
 import torch
 import torch.nn.functional as F
-from torch import optim
+from torch import inf, optim
 
 from config import DATA_DIR, DEVICE, MODEL_DIR
 from dataloader import create_dataloader
@@ -91,15 +91,24 @@ def pred():
     with torch.no_grad():
         for i in range(100):
             ids_tensor = torch.tensor(ids).unsqueeze(0)
-            logits = model(ids_tensor)
+            logits: torch.Tensor = model(ids_tensor)
+            logits = logits[:, -1, :]
 
             # output_ids = torch.argmax(logits, -1).squeeze().tolist() # 贪婪采样
 
             temperature = 0.8
             logits = logits / temperature  # 温度缩放
+            # 温度大于1会导致词元概率更加均匀分布，
+            # 而小于1的温度将导致更加自信（更尖锐或更陡峭）的分布。
+
+            # top-k 取值掩码
+            values, indices = torch.topk(logits, 3)
+            # torch.Size([1, 3]) torch.Size([1, 3])
+            kth = values[:, -1].unsqueeze(-1)
+            logits = logits.masked_fill(logits < kth, logits.new_full((), -inf))
 
             probs = torch.softmax(logits, dim=-1)
-            output_id = int(torch.multinomial(probs[:, -1, :], 1).item())  # 概率采样
+            output_id = int(torch.multinomial(probs, 1).item())  # 概率采样
             ids.append(output_id)
             text = tokenizer.decode([output_id])
             if i == 0:
