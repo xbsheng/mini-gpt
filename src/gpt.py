@@ -79,7 +79,7 @@ class TransformerBlock(nn.Module):
         self.ff = FeedForward(emb_dim)
 
     def forward(self, x: torch.Tensor):
-        print(f"forward: TransformerBlock - {self.idx}")
+        # print(f"forward: TransformerBlock - {self.idx}")
         shortcut = x
 
         # 前层归一化(Pre-LayerNorm) ✅
@@ -118,6 +118,14 @@ class FeedForward(nn.Module):
 if __name__ == "__main__":
     config = GPT_CONFIG_124M()
     model = GPTModel(config)
+
+    total_params = sum(param.numel() for param in model.parameters())
+    print(f"total_params: {total_params:,}")
+    # total_params: 163,009,536 1.63亿
+
+    # GPT-2: 1.24亿
+    # 原始GPT-2架构中使用了一个叫作权重共享(weight tying)的概念。
+    # 也就是说，原始GPT-2架构是将词元嵌入层作为输出层重复使用的
 
     with open(DATA_DIR / "the-verdict.txt", "r", encoding="utf-8") as f:
         raw_text = f.read()
