@@ -74,12 +74,12 @@ def load_weights_into_gpt(gpt: GPTModel, params):
     print("✅ load weights into gpt success")
 
 
-if __name__ == "__main__":
+def create_gpt():
     settings, params = download_and_load_gpt2(
         model_size="124M",
         models_dir=GPT_2_PATH,
+        only_load=True,
     )
-
     print("Settings:", settings)
     print("Parameter dictionary keys:", params.keys())
     # Settings: {'n_vocab': 50257, 'n_ctx': 1024, 'n_embd': 768, 'n_head': 12, 'n_layer': 12}
@@ -93,7 +93,6 @@ if __name__ == "__main__":
         n_layers=settings["n_layer"],
         qkv_bias=True,
     )
-
     """
     OpenAI在多头注意力模块的线性层中使用了偏置向量来实现查询矩阵、键矩阵和值矩阵的计算。
     偏置向量在当前的大语言模型中不常用，因为它们并不提升建模性能，因此不是必要的。
@@ -103,6 +102,12 @@ if __name__ == "__main__":
     gpt = GPTModel(config)
     load_weights_into_gpt(gpt, params)
     gpt.to(DEVICE)
+
+    return gpt
+
+
+if __name__ == "__main__":
+    gpt = create_gpt()
 
     tokenizer = tiktoken.get_encoding("gpt2")
     start_text = "nice to meet"

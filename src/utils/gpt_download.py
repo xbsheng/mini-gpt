@@ -4,16 +4,16 @@
 # Code: https://github.com/rasbt/LLMs-from-scratch
 
 
+import json
 import os
 
-import requests
-import json
 import numpy as np
+import requests
 import tensorflow as tf
 from tqdm import tqdm
 
 
-def download_and_load_gpt2(model_size, models_dir):
+def download_and_load_gpt2(model_size, models_dir, only_load=False):
     # Validate model size
     allowed_sizes = ("124M", "355M", "774M", "1558M")
     if model_size not in allowed_sizes:
@@ -24,22 +24,29 @@ def download_and_load_gpt2(model_size, models_dir):
     base_url = "https://openaipublic.blob.core.windows.net/gpt-2/models"
     backup_base_url = "https://f001.backblazeb2.com/file/LLMs-from-scratch/gpt2"
     filenames = [
-        "checkpoint", "encoder.json", "hparams.json",
-        "model.ckpt.data-00000-of-00001", "model.ckpt.index",
-        "model.ckpt.meta", "vocab.bpe"
+        "checkpoint",
+        "encoder.json",
+        "hparams.json",
+        "model.ckpt.data-00000-of-00001",
+        "model.ckpt.index",
+        "model.ckpt.meta",
+        "vocab.bpe",
     ]
 
-    # Download files
-    os.makedirs(model_dir, exist_ok=True)
-    for filename in filenames:
-        file_url = os.path.join(base_url, model_size, filename)
-        backup_url = os.path.join(backup_base_url, model_size, filename)
-        file_path = os.path.join(model_dir, filename)
-        download_file(file_url, file_path, backup_url)
+    if not only_load:
+        # Download files
+        os.makedirs(model_dir, exist_ok=True)
+        for filename in filenames:
+            file_url = os.path.join(base_url, model_size, filename)
+            backup_url = os.path.join(backup_base_url, model_size, filename)
+            file_path = os.path.join(model_dir, filename)
+            download_file(file_url, file_path, backup_url)
 
     # Load settings and params
     tf_ckpt_path = tf.train.latest_checkpoint(model_dir)
-    settings = json.load(open(os.path.join(model_dir, "hparams.json"), "r", encoding="utf-8"))
+    settings = json.load(
+        open(os.path.join(model_dir, "hparams.json"), "r", encoding="utf-8")
+    )
     params = load_gpt2_params_from_tf_ckpt(tf_ckpt_path, settings)
 
     return settings, params
@@ -61,7 +68,9 @@ def download_file(url, destination, backup_url=None):
 
         block_size = 1024  # 1 KB
         desc = os.path.basename(download_url)
-        with tqdm(total=file_size, unit="iB", unit_scale=True, desc=desc) as progress_bar:
+        with tqdm(
+            total=file_size, unit="iB", unit_scale=True, desc=desc
+        ) as progress_bar:
             with open(destination, "wb") as file:
                 for chunk in response.iter_content(chunk_size=block_size):
                     if chunk:
@@ -143,7 +152,7 @@ def load_gpt2_params_from_tf_ckpt(ckpt_path, settings):
 
         # Recursively access or create nested dictionaries
         for key in variable_name_parts[1:-1]:
-            target_dict = target_dict.setdefault(key, {})
+            target_dict = target_dict.setdefault(key, {})  # pyright: ignore[reportArgumentType, reportAttributeAccessIssue]
 
         # Assign the variable array to the last key
         last_key = variable_name_parts[-1]
