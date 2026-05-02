@@ -7,11 +7,11 @@ from torch import inf, optim
 
 from config import DATA_DIR, DEVICE, MODEL_DIR
 from dataloader import create_dataloader
-from gpt import GPT_CONFIG_124M, GPTModel
+from gpt import GPT_CONFIG, GPTModel
 
 
 @dataclass
-class GPT_CONFIG_CUSTOM(GPT_CONFIG_124M):
+class GPT_CONFIG_CUSTOM(GPT_CONFIG):
     context_length = 256
     lr = 1e-3
 

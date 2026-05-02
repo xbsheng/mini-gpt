@@ -8,25 +8,25 @@ from config import DATA_DIR
 from dataloader import create_dataloader
 from gelu import GELU
 from normal import LayerNorm
-from utils import set_seed
+from utils.seed import set_seed
 
 set_seed()
 torch.set_printoptions(sci_mode=False)  # 关闭科学计数法
 
 
 @dataclass
-class GPT_CONFIG_124M:
-    vocab_size = 50257  # 词汇表大小
-    context_length = 1024  # 上下文长度
-    emb_dim = 768  # 嵌入维度
-    n_heads = 12  # 注意力头的数量
-    n_layers = 12  # 层数
-    drop_rate = 0.1  # dropout率
-    qkv_bias = False  # 查询-键-值偏置
+class GPT_CONFIG:
+    vocab_size: int = 50257  # 词汇表大小
+    context_length: int = 1024  # 上下文长度
+    emb_dim: int = 768  # 嵌入维度
+    n_heads: int = 12  # 注意力头的数量
+    n_layers: int = 12  # 层数
+    drop_rate: float = 0.1  # dropout率
+    qkv_bias: bool = False  # 查询-键-值偏置
 
 
 class GPTModel(nn.Module):
-    def __init__(self, config: GPT_CONFIG_124M):
+    def __init__(self, config: GPT_CONFIG):
         super().__init__()
         self.token_embedding = nn.Embedding(config.vocab_size, config.emb_dim)
         self.pos_embedding = nn.Embedding(config.context_length, config.emb_dim)
@@ -58,7 +58,7 @@ class GPTModel(nn.Module):
 
 
 class TransformerBlock(nn.Module):
-    def __init__(self, config: GPT_CONFIG_124M, idx: int):
+    def __init__(self, config: GPT_CONFIG, idx: int):
         super().__init__()
         self.idx = idx
         emb_dim = config.emb_dim
@@ -116,7 +116,7 @@ class FeedForward(nn.Module):
 
 
 if __name__ == "__main__":
-    config = GPT_CONFIG_124M()
+    config = GPT_CONFIG()
     model = GPTModel(config)
 
     total_params = sum(param.numel() for param in model.parameters())
