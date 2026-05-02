@@ -48,6 +48,8 @@ def generate(model: GPTModel, start_text: str, max_len=100):
 
             probs = torch.softmax(logits, dim=-1)
             output_id = int(torch.multinomial(probs, 1).item())  # 概率采样
+            if output_id == 50256:  # <|endoftext|>
+                break
             ids.append(output_id)
             text = tokenizer.decode([output_id])
             if i == 0:
