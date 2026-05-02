@@ -74,11 +74,11 @@ def load_weights_into_gpt(gpt: GPTModel, params):
     print("✅ load weights into gpt success")
 
 
-def create_gpt():
+def create_gpt(model_size="124M", only_load=False):
     settings, params = download_and_load_gpt2(
-        model_size="124M",
+        model_size=model_size,
         models_dir=GPT_2_PATH,
-        only_load=True,
+        only_load=only_load,
     )
     print("Settings:", settings)
     print("Parameter dictionary keys:", params.keys())

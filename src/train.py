@@ -16,7 +16,43 @@ class GPT_CONFIG_CUSTOM(GPT_CONFIG):
     lr = 1e-3
 
 
+config = GPT_CONFIG(context_length=256)
+
 GPT_2_1_MODEL_PATH = MODEL_DIR / "gpt-2.1.pth"
+
+
+def generate(model: GPTModel, start_text: str, max_len=100):
+    tokenizer = tiktoken.get_encoding("gpt2")
+
+    ids = tokenizer.encode(start_text)
+
+    model.eval()
+    with torch.no_grad():
+        for i in range(max_len):
+            ids_tensor = torch.tensor(ids, device=DEVICE).unsqueeze(0)
+            logits: torch.Tensor = model(ids_tensor)
+            logits = logits[:, -1, :]
+
+            # output_ids = torch.argmax(logits, -1).squeeze().tolist() # 贪婪采样
+
+            temperature = 0.8
+            logits = logits / temperature  # 温度缩放
+            # 温度大于1会导致词元概率更加均匀分布，
+            # 而小于1的温度将导致更加自信（更尖锐或更陡峭）的分布。
+
+            # top-k 取值掩码
+            values, indices = torch.topk(logits, 3)
+            # torch.Size([1, 3]) torch.Size([1, 3])
+            min_val = values[:, -1]
+            logits = logits.masked_fill(logits < min_val, logits.new_full((), -inf))
+
+            probs = torch.softmax(logits, dim=-1)
+            output_id = int(torch.multinomial(probs, 1).item())  # 概率采样
+            ids.append(output_id)
+            text = tokenizer.decode([output_id])
+            if i == 0:
+                text = start_text + text
+            print(text, end="", flush=True)
 
 
 def train():
@@ -79,41 +115,12 @@ def train():
 
 
 def pred():
-    config = GPT_CONFIG_CUSTOM()
     model = GPTModel(config)
     model.load_state_dict(torch.load(GPT_2_1_MODEL_PATH))
 
-    tokenizer = tiktoken.get_encoding("gpt2")
     start_text = "nice to meet"
-    ids = tokenizer.encode(start_text)
+    generate(model, start_text, 100)
 
-    model.eval()
-    with torch.no_grad():
-        for i in range(100):
-            ids_tensor = torch.tensor(ids).unsqueeze(0)
-            logits: torch.Tensor = model(ids_tensor)
-            logits = logits[:, -1, :]
-
-            # output_ids = torch.argmax(logits, -1).squeeze().tolist() # 贪婪采样
-
-            temperature = 0.8
-            logits = logits / temperature  # 温度缩放
-            # 温度大于1会导致词元概率更加均匀分布，
-            # 而小于1的温度将导致更加自信（更尖锐或更陡峭）的分布。
-
-            # top-k 取值掩码
-            values, indices = torch.topk(logits, 3)
-            # torch.Size([1, 3]) torch.Size([1, 3])
-            min_val = values[:, -1]
-            logits = logits.masked_fill(logits < min_val, logits.new_full((), -inf))
-
-            probs = torch.softmax(logits, dim=-1)
-            output_id = int(torch.multinomial(probs, 1).item())  # 概率采样
-            ids.append(output_id)
-            text = tokenizer.decode([output_id])
-            if i == 0:
-                text = start_text + text
-            print(text, end="", flush=True)
     """
     Every effort moves you know; and I want him to enjoy himself," she said quite simply.
 

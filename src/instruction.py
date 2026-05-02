@@ -1,4 +1,5 @@
 import json
+from math import inf
 from pathlib import Path
 from typing import Tuple
 
@@ -8,8 +9,9 @@ from torch.nn.functional import cross_entropy
 from torch.utils.data import DataLoader, Dataset
 from tqdm import tqdm
 
-from config import DATA_DIR, DEVICE
+from config import DATA_DIR, DEVICE, MODEL_DIR
 from load import create_gpt
+from train import generate
 
 INSTrUCtiON_JSON_PATH = DATA_DIR / "instruction/instruction-data.json"
 
@@ -93,21 +95,48 @@ if __name__ == "__main__":
 
     dataloader = DataLoader(
         ds,
-        batch_size=4,
+        batch_size=16,
         shuffle=True,
         collate_fn=collate_fn,
     )
 
-    gpt = create_gpt()
+    # gpt = create_gpt(model_size="355M")
+    gpt = create_gpt(model_size="124M", only_load=True)
 
-    for inputs, targets in tqdm(dataloader):
-        print(inputs.shape, targets.shape)
-        logits: torch.Tensor = gpt(inputs)
-        print(logits.shape)
+    optimizer = torch.optim.AdamW(gpt.parameters(), lr=1e-5)
 
-        loss = cross_entropy(
-            logits.reshape(-1, logits.shape[-1]),
-            targets.reshape(-1),
-            ignore_index=LOSS_IGNORE_INDEX,
+    best_loss = inf
+
+    for echo in range(50):
+        for i, (inputs, targets) in enumerate(dataloader, 1):
+            gpt.train()
+            optimizer.zero_grad()
+
+            logits: torch.Tensor = gpt(inputs)
+            loss = cross_entropy(
+                logits.reshape(-1, logits.shape[-1]),
+                targets.reshape(-1),
+                ignore_index=LOSS_IGNORE_INDEX,
+            )
+            loss_val = loss.item()
+            print(f"echo {echo + 1} step {i} - {loss_val}")
+
+            if loss_val < best_loss:
+                best_loss = loss_val
+                torch.save(gpt.state_dict(), MODEL_DIR / "gpt-2-instruction")
+
+            loss.backward()
+            optimizer.step()
+
+        print(f"echo {echo + 1}", "=" * 50)
+        generate(
+            gpt,
+            (
+                "Below is an instruction that describes a task."
+                "Write a response that appropriately completes the request.\n\n"
+                "### Instruction:\n"
+                "Evaluate the following phrase by transforming it into the spelling given.\n\n"
+                "### Input:"
+                "freind --> friend\n"
+            ),
         )
-        print(loss.item())

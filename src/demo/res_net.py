@@ -5,7 +5,7 @@ import torch
 from torch import nn
 
 from ..gelu import GELU
-from ..utils import set_seed
+from ..utils.seed import set_seed
 
 
 class ExampleDeepNeuralNetwork(nn.Module):
