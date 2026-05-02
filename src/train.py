@@ -104,8 +104,8 @@ def pred():
             # top-k 取值掩码
             values, indices = torch.topk(logits, 3)
             # torch.Size([1, 3]) torch.Size([1, 3])
-            kth = values[:, -1].unsqueeze(-1)
-            logits = logits.masked_fill(logits < kth, logits.new_full((), -inf))
+            min_val = values[:, -1]
+            logits = logits.masked_fill(logits < min_val, logits.new_full((), -inf))
 
             probs = torch.softmax(logits, dim=-1)
             output_id = int(torch.multinomial(probs, 1).item())  # 概率采样
